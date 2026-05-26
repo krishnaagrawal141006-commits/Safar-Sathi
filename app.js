@@ -239,9 +239,12 @@ function saveStateToLocalStorage() {
 }
 
 // 4. Initializer Function
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", async () => {
     // A. Load data
     loadStateFromLocalStorage();
+    
+    // Proactive Firebase Initialization from .env/fallbacks
+    await initFirebase();
     
     // B. Check URL query parameters for location imports
     parseUrlLocationParameters();
@@ -1584,39 +1587,71 @@ const firebaseConfig = {
   measurementId: "G-RLJLMVNJR6"
 };
 
-// Initialize Firebase compatibility mode safely
-try {
-    if (typeof firebase !== 'undefined') {
-        firebase.initializeApp(firebaseConfig);
-        db = firebase.firestore();
-        auth = firebase.auth();
-        console.log("Firebase initialized successfully in compatibility mode!");
-        
-        // Listen to Auth State Changes
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                currentUser = user;
-                console.log("User logged in: ", user.displayName);
-                
-                // Show Group Actions
-                toggleAuthUI("logged-in");
-                
-                // Auto-join group if PIN is saved in localStorage
-                const savedPin = localStorage.getItem("safarsathi_group_pin");
-                if (savedPin) {
-                    joinGroup(savedPin);
+// Dynamic Firebase Initialization from .env file
+async function initFirebase() {
+    let activeConfig = { ...firebaseConfig }; // Start with hardcoded fallback
+    
+    try {
+        const response = await fetch('.env');
+        if (response.ok) {
+            const text = await response.text();
+            text.split('\n').forEach(line => {
+                const cleanLine = line.trim();
+                if (cleanLine && !cleanLine.startsWith('#')) {
+                    const parts = cleanLine.split('=');
+                    if (parts.length >= 2) {
+                        const key = parts[0].trim();
+                        const val = parts.slice(1).join('=').trim().replace(/['"]/g, '');
+                        
+                        if (key === 'FIREBASE_API_KEY') activeConfig.apiKey = val;
+                        else if (key === 'FIREBASE_AUTH_DOMAIN') activeConfig.authDomain = val;
+                        else if (key === 'FIREBASE_PROJECT_ID') activeConfig.projectId = val;
+                        else if (key === 'FIREBASE_STORAGE_BUCKET') activeConfig.storageBucket = val;
+                        else if (key === 'FIREBASE_MESSAGING_SENDER_ID') activeConfig.messagingSenderId = val;
+                        else if (key === 'FIREBASE_APP_ID') activeConfig.appId = val;
+                        else if (key === 'FIREBASE_MEASUREMENT_ID') activeConfig.measurementId = val;
+                    }
                 }
-            } else {
-                currentUser = null;
-                activeGroupPin = null;
-                toggleAuthUI("logged-out");
-            }
-        });
-    } else {
-        console.warn("Firebase SDK scripts not loaded. Operating in offline local storage mode.");
+            });
+            console.log("Loaded Firebase configuration from .env file successfully!");
+        }
+    } catch (e) {
+        console.warn("Could not fetch .env file, using fallback Firebase config: ", e);
     }
-} catch (e) {
-    console.error("Firebase startup error: ", e);
+    
+    try {
+        if (typeof firebase !== 'undefined') {
+            firebase.initializeApp(activeConfig);
+            db = firebase.firestore();
+            auth = firebase.auth();
+            console.log("Firebase initialized successfully in compatibility mode!");
+            
+            // Listen to Auth State Changes
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    currentUser = user;
+                    console.log("User logged in: ", user.displayName);
+                    
+                    // Show Group Actions
+                    toggleAuthUI("logged-in");
+                    
+                    // Auto-join group if PIN is saved in localStorage
+                    const savedPin = localStorage.getItem("safarsathi_group_pin");
+                    if (savedPin) {
+                        joinGroup(savedPin);
+                    }
+                } else {
+                    currentUser = null;
+                    activeGroupPin = null;
+                    toggleAuthUI("logged-out");
+                }
+            });
+        } else {
+            console.warn("Firebase SDK scripts not loaded. Operating in offline local storage mode.");
+        }
+    } catch (err) {
+        console.error("Firebase startup error: ", err);
+    }
 }
 
 function clearFirestoreListeners() {

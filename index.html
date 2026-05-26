@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Safar-Sathi: Surat to Puri Trip Companion</title>
+    
+    <!-- SEO and Meta Tags -->
+    <meta name="description" content="Safar-Sathi: Premium trip planner, PNR tracker, Leaflet group location tracker, expense splitter, and government bus guide for 7 friends travelling from Surat to Puri.">
+    <meta name="theme-color" content="#070a13">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,700&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet.js Map CDN CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    
+    <!-- App Container -->
+    <div class="app-container">
+        
+        <!-- Sidebar Navigation (Desktop) / Floating Bottom Bar (Mobile) -->
+        <nav class="navigation-bar">
+            <div class="brand-header">
+                <span class="brand-logo">🌅</span>
+                <span class="brand-name">Safar-Sathi</span>
+            </div>
+            
+            <ul class="nav-links">
+                <li class="nav-item active" data-tab="dashboard">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">Dashboard</span>
+                </li>
+                <li class="nav-item" data-tab="tracker">
+                    <span class="nav-icon">🗺️</span>
+                    <span class="nav-text">Sathi Tracker</span>
+                </li>
+                <li class="nav-item" data-tab="buses">
+                    <span class="nav-icon">🚌</span>
+                    <span class="nav-text">Sarkari Bus</span>
+                </li>
+                <li class="nav-item" data-tab="food-drink">
+                    <span class="nav-icon">🍽️</span>
+                    <span class="nav-text">Khana-Peena</span>
+                </li>
+                <li class="nav-item" data-tab="itinerary">
+                    <span class="nav-icon">📅</span>
+                    <span class="nav-text">Itinerary</span>
+                </li>
+                <li class="nav-item" data-tab="expenses">
+                    <span class="nav-icon">💸</span>
+                    <span class="nav-text">Hisab-Kitab</span>
+                </li>
+                <li class="nav-item" data-tab="packing">
+                    <span class="nav-icon">🎒</span>
+                    <span class="nav-text">Saman List</span>
+                </li>
+                <li class="nav-item" data-tab="settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-text">Settings</span>
+                </li>
+            </ul>
+            
+            <div class="trip-dates-badge">
+                <span class="badge-label">Surat ➔ Puri</span>
+                <span class="badge-value">27 May - 2 June</span>
+            </div>
+        </nav>
+
+        <!-- Main Dashboard Content Area -->
+        <main class="content-area">
+            
+            <!-- Header Bar -->
+            <header class="main-header">
+                <div class="header-welcome">
+                    <p class="subtitle">Surat to Puri Trip</p>
+                    <h1 class="main-title">Chalo Puri! 🌊✨</h1>
+                </div>
+                <div class="quick-status-badge">
+                    <span class="status-dot green animate-pulse"></span>
+                    <span class="status-text" id="trip-countdown-text">Calculating...</span>
+                </div>
+            </header>
+
+            <!-- Screen 1: Dashboard -->
+            <section id="dashboard" class="app-screen active">
+                <div class="dashboard-grid">
+                    
+                    <!-- Firebase Authentication & Sync Card -->
+                    <div class="glass-card sync-card full-width" style="background: linear-gradient(135deg, rgba(28, 38, 65, 0.75) 0%, rgba(13, 20, 38, 0.65) 100%); border-color: rgba(59, 130, 246, 0.35);">
+                        <div class="sync-card-layout" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
+                            <div class="sync-status-info" style="flex: 1; min-width: 300px;">
+                                <span class="badge-label" id="firebase-status-badge" style="background-color: var(--color-danger); color: #fff; padding: 0.25rem 0.75rem; border-radius: 50px; font-weight: 700; font-size: 0.8rem; display: inline-block;">🔌 Offline / Local Mode</span>
+                                <h2 class="banner-title" id="sync-title" style="margin-top: 0.75rem; margin-bottom: 0.25rem; font-size: 1.5rem;">Real-Time Group Sync</h2>
+                                <p class="card-subtitle" id="sync-subtitle" style="margin: 0; font-size: 0.88rem;">Log in with Google to enable real-time tracking, expense sharing, and live group maps!</p>
+                            </div>
+                            
+                            <!-- Auth Actions -->
+                            <div class="sync-actions" id="firebase-auth-actions">
+                                <button class="btn btn-primary" id="btn-google-login">🔑 Log In with Google</button>
+                            </div>
+
+                            <!-- Group Actions (Hidden initially) -->
+                            <div class="sync-actions hidden" id="firebase-group-actions">
+                                <div class="group-btn-container" style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+                                    <button class="btn btn-accent" id="btn-create-group">👑 Create Group (Admin)</button>
+                                    <span style="color: var(--color-text-muted); font-weight: 600;">OR</span>
+                                    <div class="share-input-group" style="margin: 0;">
+                                        <input type="text" id="input-group-pin" class="form-control" placeholder="6-Digit PIN" style="width: 130px; padding: 0.6rem 0.8rem; text-align: center; letter-spacing: 1px; font-weight: 700; font-size: 0.95rem;">
+                                        <button class="btn btn-success" id="btn-join-group" style="padding: 0.5rem 1rem;">Join Group</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Active Group Details (Hidden initially) -->
+                            <div class="sync-actions hidden" id="firebase-active-group-details">
+                                <div class="active-group-info" style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                                    <div class="pnr-lbl" style="font-size: 1rem; letter-spacing: 0.5px; color: var(--color-text-muted);">
+                                        GROUP PIN: <span id="active-group-pin-display" style="color: var(--color-accent); font-size: 1.4rem; font-weight: 800; letter-spacing: 1.5px; background: rgba(0,0,0,0.3); padding: 0.2rem 0.8rem; border-radius: var(--border-radius-sm); border: 1px solid var(--border-glass);">------</span>
+                                    </div>
+                                    <div class="small" id="user-display-info" style="color: #ffffff; font-weight: 600;">Logged in as: ...</div>
+                                    <button class="btn btn-danger btn-sm" id="btn-google-logout">🚪 Logout</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Trip Countdown Banner -->
+                    <div class="glass-card banner-card full-width">
+                        <div class="banner-content">
+                            <span class="banner-badge">📅 Countdown</span>
+                            <h2 class="banner-title">Train Boarding: Tomorrow Night! (27th May)</h2>
+                            <div class="countdown-timer" id="countdown-timer">
+                                <div class="timer-segment">
+                                    <span class="number" id="cd-days">00</span>
+                                    <span class="label">Days</span>
+                                </div>
+                                <div class="timer-segment">
+                                    <span class="number" id="cd-hours">00</span>
+                                    <span class="label">Hours</span>
+                                </div>
+                                <div class="timer-segment">
+                                    <span class="number" id="cd-mins">00</span>
+                                    <span class="label">Mins</span>
+                                </div>
+                                <div class="timer-segment">
+                                    <span class="number" id="cd-secs">00</span>
+                                    <span class="label">Secs</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="banner-art">🌴🌅🚂</div>
+                    </div>
+
+                    <!-- Statistics Cards -->
+                    <div class="glass-card stat-card hover-glow">
+                        <div class="stat-icon">💸</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Total Expenses</span>
+                            <h3 class="stat-value" id="stats-total-expense">₹0</h3>
+                        </div>
+                    </div>
+                    <div class="glass-card stat-card hover-glow">
+                        <div class="stat-icon">👤</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Per Friend Share</span>
+                            <h3 class="stat-value" id="stats-per-share">₹0</h3>
+                        </div>
+                    </div>
+                    <div class="glass-card stat-card hover-glow">
+                        <div class="stat-icon">🎒</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Packing Progress</span>
+                            <h3 class="stat-value" id="stats-packing-progress">0%</h3>
+                        </div>
+                    </div>
+
+                    <!-- PNR & Seat Details Card -->
+                    <div class="glass-card pnr-card">
+                        <div class="card-header">
+                            <h3 class="card-title">🚂 PNR & Seat Booking</h3>
+                            <button class="btn btn-secondary btn-sm" id="edit-pnr-btn">📝 Edit Info</button>
+                        </div>
+                        
+                        <div class="pnr-display" id="pnr-display-view">
+                            <div class="pnr-number-box">
+                                <span class="pnr-lbl">TRAIN PNR</span>
+                                <span class="pnr-num" id="saved-pnr">246-8101214</span>
+                            </div>
+                            <div class="pnr-details-grid">
+                                <div class="pnr-detail-item">
+                                    <span class="detail-label">Train Name</span>
+                                    <span class="detail-val" id="saved-train-name">Puri Express (22828)</span>
+                                </div>
+                                <div class="pnr-detail-item">
+                                    <span class="detail-label">Coach</span>
+                                    <span class="detail-val" id="saved-coach">B1</span>
+                                </div>
+                                <div class="pnr-detail-item" style="grid-column: span 2;">
+                                    <span class="detail-label">Seats (7 Friends)</span>
+                                    <span class="detail-val" id="saved-seats">12, 14, 15, 17, 18, 20, 21 (Side-Lower & Main)</span>
+                                </div>
+                            </div>
+                            <div class="pnr-actions">
+                                <a href="https://www.indianrail.gov.in/enquiry/PNR_Enquiry.html" target="_blank" rel="noopener" class="btn btn-primary btn-sm flex-center">
+                                    <span>🔍 Check Live PNR Status</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- PNR Edit Form (Hidden by default) -->
+                        <form id="pnr-edit-form" class="pnr-form hidden">
+                            <div class="form-group">
+                                <label for="input-pnr">PNR Number</label>
+                                <input type="text" id="input-pnr" class="form-control" placeholder="Enter PNR">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="input-train">Train Info</label>
+                                    <input type="text" id="input-train" class="form-control" placeholder="e.g. Puri Express (22828)">
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-coach">Coach</label>
+                                    <input type="text" id="input-coach" class="form-control" placeholder="e.g. B1">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="input-seats">Seat Numbers (7 people)</label>
+                                <input type="text" id="input-seats" class="form-control" placeholder="e.g. 12, 14, 15, 17, 18, 20, 21">
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-danger btn-sm" id="cancel-pnr-btn">Cancel</button>
+                                <button type="submit" class="btn btn-success btn-sm">Save Booking</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Active Friends / Travelers Card -->
+                    <div class="glass-card travelers-card">
+                        <div class="card-header">
+                            <h3 class="card-title">👥 Sathi Group</h3>
+                            <span class="accent-badge" id="friend-count-badge">6 Travelers</span>
+                        </div>
+                        <p class="card-subtitle">Edit names or add new friends dynamically. Calculations will adapt automatically!</p>
+                        
+                        <div class="friends-list" id="friends-list-container">
+                            <!-- Populated by JS -->
+                        </div>
+
+                        <!-- Add Friend Form -->
+                        <form id="add-friend-form" class="share-input-group" style="margin-top: 1rem;">
+                            <input type="text" id="input-new-friend-name" class="form-control" placeholder="Dost ka naam..." required>
+                            <button type="submit" class="btn btn-success btn-sm" style="padding: 0.5rem 1rem;">➕ Add</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Screen 2: Sathi Tracker (Map) -->
+            <section id="tracker" class="app-screen">
+                <div class="tracker-layout">
+                    <!-- Map Controls Container -->
+                    <div class="glass-card map-panel">
+                        <h3 class="card-title">🗺️ Sathi Tracker</h3>
+                        <p class="card-subtitle">See where everyone is in Bhubaneswar & Puri!</p>
+                        
+                        <!-- Map Toggles -->
+                        <div class="map-controls">
+                            <button class="btn btn-primary" id="btn-get-my-location">
+                                📍 Update My Location
+                            </button>
+                            <button class="btn btn-accent" id="btn-toggle-demo-locations">
+                                🤖 Toggle Demo Mode
+                            </button>
+                        </div>
+                        
+                        <!-- Location Share Component -->
+                        <div class="share-box glass-inset">
+                            <h4>📤 Share My Location</h4>
+                            <p class="small">Share a link with friends so they can plot you on their map.</p>
+                            <div class="share-input-group">
+                                <input type="text" id="my-location-link" class="form-control" readonly value="Pin your location first...">
+                                <button class="btn btn-secondary" id="btn-copy-location-link">Copy</button>
+                            </div>
+                        </div>
+
+                        <!-- Import Friend Location -->
+                        <div class="share-box glass-inset">
+                            <h4>📥 Import Friend Location</h4>
+                            <p class="small">Paste the location link or code shared by a friend below.</p>
+                            <form id="friend-location-import-form" class="share-input-group">
+                                <input type="text" id="input-import-location" class="form-control" placeholder="Paste link or code here...">
+                                <button type="submit" class="btn btn-success">Import</button>
+                            </form>
+                        </div>
+
+                        <!-- Active Pins Status list -->
+                        <div class="active-pins-list">
+                            <h4>📍 Active Pins On Map</h4>
+                            <ul id="active-markers-list" class="pins-status-list">
+                                <!-- Populated dynamically -->
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Map Container -->
+                    <div class="map-wrapper glass-card">
+                        <div id="group-map"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Screen 3: Sarkari Bus & Budget Hacks -->
+            <section id="buses" class="app-screen">
+                <div class="bus-layout">
+                    
+                    <!-- Budget Saver Card -->
+                    <div class="glass-card budget-alert-card full-width">
+                        <div class="budget-alert-content">
+                            <h3>💰 Sathi Budget Saver Hacks!</h3>
+                            <p>Taking government buses and local trains instead of private cabs will save your group **up to ₹5,500+** during this trip!</p>
+                        </div>
+                        <div class="budget-matrix-badge">
+                            <span class="val">Save ₹5,500+</span>
+                            <span class="lbl">Combined Budget</span>
+                        </div>
+                    </div>
+
+                    <!-- Bus/Train Database List -->
+                    <div class="glass-card bus-db-card">
+                        <div class="card-header">
+                            <h3 class="card-title">🚌 Government Bus & MEMU Routes</h3>
+                            <span class="accent-badge">Offline Timetable</span>
+                        </div>
+                        <p class="card-subtitle">Use these routes for highly economical and safe local travel. Filter by route below:</p>
+                        
+                        <div class="bus-filters">
+                            <button class="btn btn-sm btn-secondary active" data-bus-filter="all">All</button>
+                            <button class="btn btn-sm btn-secondary" data-bus-filter="to-puri">Bhubaneswar ➔ Puri</button>
+                            <button class="btn btn-sm btn-secondary" data-bus-filter="to-konark">Puri ➔ Konark</button>
+                            <button class="btn btn-sm btn-secondary" data-bus-filter="to-chilika">Puri ➔ Chilika</button>
+                            <button class="btn btn-sm btn-secondary" data-bus-filter="local-memu">Khurda MEMU</button>
+                        </div>
+
+                        <div class="bus-routes-grid" id="bus-routes-container">
+                            <!-- Populated dynamically by app.js -->
+                        </div>
+                    </div>
+
+                    <!-- Travel & Transport Money-Saving Tips -->
+                    <div class="glass-card travel-tips-card">
+                        <h3 class="card-title">💡 Pro Money-Saving Hacks for Friends</h3>
+                        
+                        <div class="tips-accordion">
+                            <div class="tip-item">
+                                <div class="tip-header">
+                                    <span class="tip-num">01</span>
+                                    <h4>License Problem? AC Mo Bus / OTDC Bus Hack!</h4>
+                                </div>
+                                <div class="tip-content">
+                                    <p>Agar kisi ke paas driving license nahi hai, toh scooty rent nahi ho payegi. Fret not! Mo Bus Route 53 AC (Puri stand to Konark) costs only **₹50 per person** one-way (₹600 round-trip for 6 friends!). Alternatively, book the **OTDC Government Sightseeing AC Bus** for **₹350-₹400 per seat** round trip, which is fully legal, safe, and comfortable!</p>
+                                </div>
+                            </div>
+
+                            <div class="tip-item">
+                                <div class="tip-header">
+                                    <span class="tip-num">02</span>
+                                    <h4>Chilika Lake Boating Counter Warning</h4>
+                                </div>
+                                <div class="tip-content">
+                                    <p>When you reach Satapada (Chilika Lake), local brokers/touts will surround you, offering boat tours for ₹4,000+. **Do NOT book with them.** Head straight to the official **OTDC Government Booking Counter**. The rates are fixed, government-regulated, and they charge only ₹1,200 to ₹1,800 for the entire boat (up to 8 people!).</p>
+                                </div>
+                            </div>
+
+                            <div class="tip-item">
+                                <div class="tip-header">
+                                    <span class="tip-num">03</span>
+                                    <h4>Mahaprasad Lunch at Anand Bazar</h4>
+                                </div>
+                                <div class="tip-content">
+                                    <p>Plan your lunch inside Jagannath Temple at the famous **Anand Bazar** (the world's largest food court). The **Abadha Mahaprasad** (cooked in earthen pots) is highly nutritious, extremely tasty, and costs only ₹80-₹120 per head. It easily feeds 7 people abundantly for a very low budget!</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Screen: Khana-Peena (Food & Alcohol Guide) -->
+            <section id="food-drink" class="app-screen">
+                <div class="food-layout">
+                    
+                    <!-- Left Side: Pricing Guide -->
+                    <div class="glass-card food-pricing-card" style="background: linear-gradient(135deg, rgba(16, 22, 38, 0.7) 0%, rgba(4, 6, 12, 0.75) 100%); border-color: rgba(245, 158, 11, 0.25);">
+                        <div class="card-header">
+                            <h3 class="card-title">🍽️ Food & Alcohol Budget Rate Card</h3>
+                            <span class="accent-badge">Puri & BBSR Local Rates</span>
+                        </div>
+                        <p class="card-subtitle" style="margin-bottom: 1.25rem;">Puri aur Bhubaneswar mein khane-peene aur alcohol ka average rates aur strict rules:</p>
+                        
+                        <div class="tips-accordion" style="display: flex; flex-direction: column; gap: 1rem;">
+                            <!-- Veg Food -->
+                            <div class="tip-item" style="border-left: 4px solid var(--color-success); background: rgba(16, 185, 129, 0.03); padding: 1.25rem; border-radius: var(--border-radius-md);">
+                                <div class="tip-header" style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                                    <span class="tip-num" style="background: rgba(16, 185, 129, 0.15); border: 1px solid var(--color-success); color: var(--color-success); font-weight: 800; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">V</span>
+                                    <h4 style="color: var(--color-success); font-size: 1.1rem; font-weight: 700; margin: 0;">Best Pure Veg Food Rates</h4>
+                                </div>
+                                <div class="tip-content" style="font-size: 0.88rem; line-height: 1.6; color: var(--color-text-muted);">
+                                    <p>🟢 **Abadha Mahaprasad (Puri Temple):** ₹80 - ₹120 per thali (Anand Bazar me full traditional meal cooked in earthen pots. Extremely pious, pure & filling!).</p>
+                                    <p style="margin-top: 0.4rem;">🟢 **Odia Veg Thali / Dalma Thali:** ₹90 - ₹150 in local restaurants (includes Dalma stew, Rice, crushed badis, sweet khatta chutney).</p>
+                                    <p style="margin-top: 0.4rem;">🟢 **Chena Poda Dessert:** ₹250 - ₹350 per kg (Odia sweet baked cottage cheesecake. Must try! Approx ₹30-₹50 per slice).</p>
+                                </div>
+                            </div>
+
+                            <!-- Non-Veg Food -->
+                            <div class="tip-item" style="border-left: 4px solid var(--color-danger); background: rgba(239, 68, 68, 0.03); padding: 1.25rem; border-radius: var(--border-radius-md);">
+                                <div class="tip-header" style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                                    <span class="tip-num" style="background: rgba(239, 68, 68, 0.15); border: 1px solid var(--color-danger); color: var(--color-danger); font-weight: 800; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">N</span>
+                                    <h4 style="color: var(--color-danger); font-size: 1.1rem; font-weight: 700; margin: 0;">Best Non-Veg Food Rates</h4>
+                                </div>
+                                <div class="tip-content" style="font-size: 0.88rem; line-height: 1.6; color: var(--color-text-muted);">
+                                    <p>🔴 **Chilika Crab & Jumbo Prawns:** ₹250 - ₹400 per plate of Crab Masala or Prawn Curry (Satapada boating side or Puri beach side restaurants - fresh catch and exceptionally delicious!).</p>
+                                    <p style="margin-top: 0.4rem;">🔴 **Odia Mutton Curry (Mansa Jholo):** ₹220 - ₹320 per plate (tender mutton slow cooked in light potato gravy, highly popular at local dhabas & restaurants in Puri).</p>
+                                    <p style="margin-top: 0.4rem;">🔴 **Puri Sea Fish Curry (Machha Jholo):** ₹120 - ₹180 per plate (fresh fried Pomfret or Rohu with steam rice).</p>
+                                </div>
+                            </div>
+
+                            <!-- Alcohol -->
+                            <div class="tip-item" style="border-left: 4px solid var(--color-accent); background: rgba(245, 158, 11, 0.03); padding: 1.25rem; border-radius: var(--border-radius-md);">
+                                <div class="tip-header" style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.75rem;">
+                                    <span class="tip-num" style="background: var(--color-accent-glow); border: 1px solid var(--color-accent); color: var(--color-accent); font-weight: 800; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">A</span>
+                                    <h4 style="color: var(--color-accent); font-size: 1.1rem; font-weight: 700; margin: 0;">Alcohol Rates & Strict Rules</h4>
+                                </div>
+                                <div class="tip-content" style="font-size: 0.88rem; line-height: 1.6; color: var(--color-text-muted);">
+                                    <p>⚠️ **STRICT WARNING:** Puri ek holy temple town hai. **Puri Golden Beach par ya Jagannath Temple area me alcohol/beer peena strictly illegal aur prohibited hai.** Heavy fine aur police action/jail ho sakti hai! Drink only inside licensed bars or your private hotel rooms.</p>
+                                    <p style="margin-top: 0.4rem;">🍻 **Beer Price (Govt. OFF Shop):** ₹140 - ₹190 per 650ml bottle (Kingfisher, Tuborg, Bira). In local licensed beach bars/cafes: ₹220 - ₹320.</p>
+                                    <p style="margin-top: 0.4rem;">🥃 **Whiskey & Rum (Govt. OFF Shop):** ₹500 - ₹900 full bottle 750ml (Royal Stag, Blenders Pride, Magic Moments, Old Monk).</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Side: Interactive Odia Feast Calculator -->
+                    <div class="glass-card food-calculator-card" style="background: linear-gradient(135deg, rgba(20, 26, 45, 0.75) 0%, rgba(8, 12, 24, 0.8) 100%); border-color: rgba(59, 130, 246, 0.25);">
+                        <div class="card-header">
+                            <h3 class="card-title">🍛 Odia Feast Cost Estimator</h3>
+                            <span class="accent-badge" id="calc-friends-badge">5 Friends</span>
+                        </div>
+                        <p class="card-subtitle" style="margin-bottom: 1.25rem;">Apna menu pick karein aur dekhein group share aur per head split dynamic calculation!</p>
+                        
+                        <div class="calculator-form" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                            <!-- Menu Grid -->
+                            <div class="menu-items-list" style="display: flex; flex-direction: column; gap: 0.8rem; max-height: 385px; overflow-y: auto; padding-right: 0.25rem;">
+                                <!-- Item 1 -->
+                                <div class="menu-item-row" style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.02); padding: 0.75rem 1rem; border-radius: var(--border-radius-md); border: 1px solid var(--border-glass);">
+                                    <div class="menu-item-desc">
+                                        <div style="font-weight: 600; font-size: 0.95rem;">🟢 Abadha Mahaprasad Thali</div>
+                                        <div style="font-size: 0.78rem; color: var(--color-text-muted);">Puri Temple Prasad thali (Pure Veg)</div>
+                                    </div>
+                                    <div class="menu-item-controls" style="display: flex; align-items: center; gap: 0.75rem;">
+                                        <span style="font-weight: 700; color: var(--color-success); font-size: 0.95rem;">₹100</span>
+                                        <input type="number" class="form-control menu-qty-input" data-price="100" id="qty-abadha" value="0" min="0" max="20" style="width: 70px; padding: 0.35rem 0.5rem; text-align: center;">
+                                    </div>
+                                </div>
+
+                                <!-- Item 2 -->
+                                <div class="menu-item-row" style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.02); padding: 0.75rem 1rem; border-radius: var(--border-radius-md); border: 1px solid var(--border-glass);">
+                                    <div class="menu-item-desc">
+                                        <div style="font-weight: 600; font-size: 0.95rem;">🟢 Chena Poda Sweet (1 Kg)</div>
+                                        <div style="font-size: 0.78rem; color: var(--color-text-muted);">Baked Odia cottage cheesecake</div>
+                                    </div>
+                                    <div class="menu-item-controls" style="display: flex; align-items: center; gap: 0.75rem;">
+                                        <span style="font-weight: 700; color: var(--color-success); font-size: 0.95rem;">₹300</span>
+                                        <input type="number" class="form-control menu-qty-input" data-price="300" id="qty-chenapoda" value="0" min="0" max="10" style="width: 70px; padding: 0.35rem 0.5rem; text-align: center;">
+                                    </div>
+                                </div>
+
+                                <!-- Item 3 -->
+                                <div class="menu-item-row" style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.02); padding: 0.75rem 1rem; border-radius: var(--border-radius-md); border: 1px solid var(--border-glass);">
+                                    <div class="menu-item-desc">
+                                        <div style="font-weight: 600; font-size: 0.95rem;">🔴 Chilika Crab Masala Curry</div>
+                                        <div style="font-size: 0.78rem; color: var(--color-text-muted);">Fresh local Chilika lake crab plate</div>
+                                    </div>
+                                    <div class="menu-item-controls" style="display: flex; align-items: center; gap: 0.75rem;">
+                                        <span style="font-weight: 700; color: var(--color-danger); font-size: 0.95rem;">₹300</span>
+                                        <input type="number" class="form-control menu-qty-input" data-price="300" id="qty-crab" value="0" min="0" max="20" style="width: 70px; padding: 0.35rem 0.5rem; text-align: center;">
+                                    </div>
+                                </div>
+
+                                <!-- Item 4 -->
+                                <div class="menu-item-row" style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.02); padding: 0.75rem 1rem; border-radius: var(--border-radius-md); border: 1px solid var(--border-glass);">
+                                    <div class="menu-item-desc">
+                                        <div style="font-weight: 600; font-size: 0.95rem;">🔴 Odia Mutton Mansa Jholo</div>
+                                        <div style="font-size: 0.78rem; color: var(--color-text-muted);">Rich slow-cooked local mutton curry</div>
+                                    </div>
+                                    <div class="menu-item-controls" style="display: flex; align-items: center; gap: 0.75rem;">
+                                        <span style="font-weight: 700; color: var(--color-danger); font-size: 0.95rem;">₹260</span>
+                                        <input type="number" class="form-control menu-qty-input" data-price="260" id="qty-mutton" value="0" min="0" max="20" style="width: 70px; padding: 0.35rem 0.5rem; text-align: center;">
+                                    </div>
+                                </div>
+
+                                <!-- Item 5 -->
+                                <div class="menu-item-row" style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.02); padding: 0.75rem 1rem; border-radius: var(--border-radius-md); border: 1px solid var(--border-glass);">
+                                    <div class="menu-item-desc">
+                                        <div style="font-weight: 600; font-size: 0.95rem;">🔴 Sea Fish Thali (Machha)</div>
+                                        <div style="font-size: 0.78rem; color: var(--color-text-muted);">Fresh pomfret/rohu fried fish + rice thali</div>
+                                    </div>
+                                    <div class="menu-item-controls" style="display: flex; align-items: center; gap: 0.75rem;">
+                                        <span style="font-weight: 700; color: var(--color-danger); font-size: 0.95rem;">₹150</span>
+                                        <input type="number" class="form-control menu-qty-input" data-price="150" id="qty-fish" value="0" min="0" max="20" style="width: 70px; padding: 0.35rem 0.5rem; text-align: center;">
+                                    </div>
+                                </div>
+
+                                <!-- Item 6 -->
+                                <div class="menu-item-row" style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.02); padding: 0.75rem 1rem; border-radius: var(--border-radius-md); border: 1px solid var(--border-glass);">
+                                    <div class="menu-item-desc">
+                                        <div style="font-weight: 600; font-size: 0.95rem;">🍻 Premium Chilled Beer (650ml)</div>
+                                        <div style="font-size: 0.78rem; color: var(--color-text-muted);">Govt OFF Shop price (Kingfisher/Bira)</div>
+                                    </div>
+                                    <div class="menu-item-controls" style="display: flex; align-items: center; gap: 0.75rem;">
+                                        <span style="font-weight: 700; color: var(--color-accent); font-size: 0.95rem;">₹160</span>
+                                        <input type="number" class="form-control menu-qty-input" data-price="160" id="qty-beer" value="0" min="0" max="30" style="width: 70px; padding: 0.35rem 0.5rem; text-align: center;">
+                                    </div>
+                                </div>
+
+                                <!-- Item 7 -->
+                                <div class="menu-item-row" style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.02); padding: 0.75rem 1rem; border-radius: var(--border-radius-md); border: 1px solid var(--border-glass);">
+                                    <div class="menu-item-desc">
+                                        <div style="font-weight: 600; font-size: 0.95rem;">🥃 Magic Moments / Rum (750ml)</div>
+                                        <div style="font-size: 0.78rem; color: var(--color-text-muted);">OFF Shop full bottle price range</div>
+                                    </div>
+                                    <div class="menu-item-controls" style="display: flex; align-items: center; gap: 0.75rem;">
+                                        <span style="font-weight: 700; color: var(--color-accent); font-size: 0.95rem;">₹600</span>
+                                        <input type="number" class="form-control menu-qty-input" data-price="600" id="qty-whiskey" value="0" min="0" max="10" style="width: 70px; padding: 0.35rem 0.5rem; text-align: center;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Calculation Display Summary -->
+                            <div class="glass-inset" style="display: flex; flex-direction: column; gap: 0.75rem; border: 1px solid var(--border-glass-active);">
+                                <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 0.9rem; color: var(--color-text-muted);">
+                                    <span>Selected Menu Total:</span>
+                                    <span id="food-calc-total" style="color: #ffffff; font-weight: 700;">₹0</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 0.9rem; color: var(--color-text-muted);">
+                                    <span>Active Friends:</span>
+                                    <span id="food-calc-friends" style="color: var(--color-accent); font-weight: 700;">5 Travelers</span>
+                                </div>
+                                <div style="border-top: 1px dashed var(--border-glass); margin: 0.25rem 0; padding-top: 0.5rem; display: flex; justify-content: space-between; font-weight: 800; font-size: 1.1rem; color: #ffffff;">
+                                    <span>Per Head Split:</span>
+                                    <span id="food-calc-split" style="color: var(--color-primary); font-size: 1.25rem;">₹0 / head</span>
+                                </div>
+                            </div>
+
+                            <!-- Settle in Hisab-Kitab Quick Button -->
+                            <button class="btn btn-primary btn-block" id="btn-add-food-to-expenses">
+                                💸 Add This Feast to Hisab-Kitab
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Screen 5: Itinerary -->
+            <section id="itinerary" class="app-screen">
+                <div class="itinerary-layout">
+                    <!-- Day Navigation Tabs -->
+                    <div class="glass-card day-nav-card">
+                        <div class="day-selectors" id="day-selectors-container">
+                            <!-- Populated dynamically with exact dates (27 May to 2 June) -->
+                        </div>
+                    </div>
+
+                    <!-- Selected Day Plan Area -->
+                    <div class="glass-card day-plan-card">
+                        <div class="card-header" id="day-plan-header">
+                            <h3 class="card-title" id="selected-day-title">May 29 (Friday)</h3>
+                            <span class="accent-badge" id="selected-day-badge">Khurda ➔ Lingaraj ➔ Puri</span>
+                        </div>
+                        
+                        <p class="day-summary-text" id="selected-day-summary">Loading day plan summary...</p>
+
+                        <!-- Timeline Elements -->
+                        <div class="timeline" id="day-timeline-container">
+                            <!-- Populated by JS -->
+                        </div>
+
+                        <!-- Add Custom Event Form -->
+                        <div class="add-event-box glass-inset">
+                            <h4>➕ Add Custom Plan/Event</h4>
+                            <form id="add-event-form" class="event-form">
+                                <div class="form-row">
+                                    <div class="form-group flex-2">
+                                        <input type="text" id="input-event-time" class="form-control" placeholder="Time (e.g. 09:30 AM)" required>
+                                    </div>
+                                    <div class="form-group flex-4">
+                                        <input type="text" id="input-event-title" class="form-control" placeholder="What is the plan?" required>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <textarea id="input-event-desc" class="form-control" placeholder="Details/Description (Optional)" rows="2"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-block">Add Event to Itinerary</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Screen 5: Hisab-Kitab (Expense Splitter) -->
+            <section id="expenses" class="app-screen">
+                <div class="expense-layout">
+                    
+                    <!-- Expense Adder Card -->
+                    <div class="glass-card expense-input-card">
+                        <h3 class="card-title">💸 Add Group Expense ("Naya Kharcha")</h3>
+                        <p class="card-subtitle">Add expenses incurred by any group member during the trip.</p>
+                        
+                        <form id="add-expense-form" class="expense-form">
+                            <div class="form-group">
+                                <label for="expense-title">Expense Title / Reason</label>
+                                <input type="text" id="expense-title" class="form-control" placeholder="e.g. Surat Station Snacks, Hotel Advance" required>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="expense-amount">Amount (₹)</label>
+                                    <input type="number" id="expense-amount" class="form-control" placeholder="Amount in ₹" min="1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="expense-category">Category</label>
+                                    <select id="expense-category" class="form-control">
+                                        <option value="travel">🚂 Train/Bus/Local Travel</option>
+                                        <option value="food">🍽️ Food & Meals</option>
+                                        <option value="stay">🏨 Hotel & Dharamshala</option>
+                                        <option value="tickets">🎟️ Entry Tickets/Boats</option>
+                                        <option value="others">📦 Miscellaneous</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="expense-payer">Who Paid?</label>
+                                    <select id="expense-payer" class="form-control">
+                                        <!-- Friends list populated by JS -->
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Split Type</label>
+                                    <div class="split-info-badge">
+                                        Equally Split among all 7 friends
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-block">Split & Add Expense</button>
+                        </form>
+                    </div>
+
+                    <!-- Settle Up Matrix Card -->
+                    <div class="glass-card settle-up-card">
+                        <div class="card-header">
+                            <h3 class="card-title">🤝 Hisab-Kitab Settle Summary</h3>
+                            <button class="btn btn-danger btn-sm" id="btn-clear-expenses">🧹 Clear All</button>
+                        </div>
+                        <p class="card-subtitle">Calculated dynamically to tell you exactly who has to pay how much to whom!</p>
+                        
+                        <div class="settle-matrix glass-inset" id="settle-matrix-container">
+                            <!-- Populated dynamically by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Individual Balances Card -->
+                    <div class="glass-card balances-card">
+                        <h3 class="card-title">💳 Individual Balances</h3>
+                        <p class="card-subtitle">Positive means they get money back, negative means they owe.</p>
+                        <div class="balances-list" id="individual-balances-container">
+                            <!-- Populated dynamically by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Expense History Card -->
+                    <div class="glass-card expense-list-card full-width">
+                        <h3 class="card-title">📋 Expense Ledger</h3>
+                        <div class="table-responsive">
+                            <table class="expense-table">
+                                <thead>
+                                    <tr>
+                                        <th>Reason</th>
+                                        <th>Category</th>
+                                        <th>Paid By</th>
+                                        <th>Total Amount</th>
+                                        <th>Share (per head)</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="expense-history-tbody">
+                                    <!-- Populated dynamically by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Screen 6: Saman Checklist -->
+            <section id="packing" class="app-screen">
+                <div class="packing-layout">
+                    <!-- Packing Header and controls -->
+                    <div class="glass-card packing-control-card full-width">
+                        <div class="card-header">
+                            <h3 class="card-title">🎒 Saman ki List (Group Packing Checklist)</h3>
+                            <span class="accent-badge" id="packing-progress-badge">0 / 0 Done</span>
+                        </div>
+                        <p class="card-subtitle">Preloaded items for coastal Odisha & temples. Assign items to friends so there's no confusion!</p>
+                        
+                        <!-- Progress Bar -->
+                        <div class="packing-progress-wrapper">
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill" id="packing-progress-bar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Packing Filter -->
+                        <div class="packing-filters">
+                            <button class="btn btn-sm btn-secondary active" data-packing-filter="all">All Items</button>
+                            <button class="btn btn-sm btn-secondary" data-packing-filter="documents">📄 Documents</button>
+                            <button class="btn btn-sm btn-secondary" data-packing-filter="clothing">👕 Clothes (Temple/Beach)</button>
+                            <button class="btn btn-sm btn-secondary" data-packing-filter="toiletries">💊 Toiletries/Meds</button>
+                            <button class="btn btn-sm btn-secondary" data-packing-filter="electronics">🔋 Gadgets/Shared</button>
+                        </div>
+                    </div>
+
+                    <!-- Checklist Card -->
+                    <div class="glass-card packing-list-card">
+                        <ul class="checklist-ul" id="checklist-items-container">
+                            <!-- Populated dynamically by JS -->
+                        </ul>
+                    </div>
+
+                    <!-- Add Packing Item Form Card -->
+                    <div class="glass-card add-packing-card">
+                        <h3 class="card-title">➕ Add Packing Item</h3>
+                        <form id="add-packing-item-form" class="packing-form">
+                            <div class="form-group">
+                                <label for="packing-item-name">Item Name</label>
+                                <input type="text" id="packing-item-name" class="form-control" placeholder="e.g. Waterproof Phone Pouch, Powerbank" required>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="packing-item-category">Category</label>
+                                    <select id="packing-item-category" class="form-control">
+                                        <option value="documents">📄 Documents</option>
+                                        <option value="clothing">👕 Clothing</option>
+                                        <option value="toiletries">💊 Toiletries & Medical</option>
+                                        <option value="electronics">🔋 Electronics/Gadgets</option>
+                                        <option value="others">📦 Others</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="packing-item-assignee">Assign To</label>
+                                    <select id="packing-item-assignee" class="form-control">
+                                        <!-- Friends list populated by JS -->
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-block">Add to Packing Checklist</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Screen: Settings & Profile Customization -->
+            <section id="settings" class="app-screen">
+                <div class="settings-layout" style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.75rem;">
+                    
+                    <!-- Left: Profile Customizer -->
+                    <div class="glass-card settings-card" style="background: linear-gradient(135deg, rgba(20, 26, 45, 0.75) 0%, rgba(8, 12, 24, 0.8) 100%); border-color: rgba(59, 130, 246, 0.25);">
+                        <div class="card-header">
+                            <h3 class="card-title">⚙️ Profile Settings</h3>
+                            <span class="accent-badge">Customize Your Profile</span>
+                        </div>
+                        <p class="card-subtitle" style="margin-bottom: 1.5rem;">Apna naam aur role badlein. Group sync ke sath ye real-time me sabhi doston ko update kar dega!</p>
+                        
+                        <form id="settings-profile-form" class="settings-form" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                            <div class="form-group">
+                                <label for="input-settings-username">Apna Naam (Your Name)</label>
+                                <input type="text" id="input-settings-username" class="form-control" placeholder="Enter your name..." required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="input-settings-userrole">Apna Tag / Role (e.g. Organizer, Gamer, Foodie)</label>
+                                <input type="text" id="input-settings-userrole" class="form-control" placeholder="e.g. Organizer, Gamer, Foodie, Photographer...">
+                            </div>
+
+                            <button type="submit" class="btn btn-success btn-block" id="btn-save-settings-profile">
+                                💾 Save Profile Changes
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Right: Trip Info & Reset Options -->
+                    <div class="glass-card trip-info-card" style="background: linear-gradient(135deg, rgba(16, 22, 38, 0.7) 0%, rgba(4, 6, 12, 0.75) 100%); border-color: rgba(245, 158, 11, 0.25);">
+                        <h3 class="card-title">ℹ️ Safar Info & Reset</h3>
+                        <p class="card-subtitle">Local storage management & active session information.</p>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 1rem;">
+                            <!-- Session Details -->
+                            <div class="glass-inset" style="display: flex; flex-direction: column; gap: 0.60rem; border: 1px solid var(--border-glass-active);">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--color-text-muted);">
+                                    <span>Sync Status:</span>
+                                    <span id="settings-sync-status" style="font-weight: 700; color: var(--color-danger);">Offline / Local</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--color-text-muted);">
+                                    <span>Active Group PIN:</span>
+                                    <span id="settings-group-pin" style="font-weight: 700; color: var(--color-accent); font-family: monospace; letter-spacing: 0.5px;">None</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--color-text-muted);">
+                                    <span>Total Active Friends:</span>
+                                    <span id="settings-friends-count" style="font-weight: 700; color: var(--color-primary);">5 Travelers</span>
+                                </div>
+                            </div>
+
+                            <!-- Danger Zone / Reset local storage -->
+                            <div class="glass-inset" style="border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.03);">
+                                <h4 style="color: var(--color-danger); font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem;">⚠️ Reset local data</h4>
+                                <p class="small" style="margin-bottom: 0.75rem; line-height: 1.4;">Apne local browser storage ki saari data (expenses, packing checklists, customized items) ko clear karke default setup par wapas jaane ke liye:</p>
+                                <button class="btn btn-danger btn-sm btn-block" id="btn-reset-local-storage" style="padding: 0.5rem;">
+                                    🧹 Clear All Trip Data
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Leaflet.js Map CDN JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <!-- Firebase Compatibility SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Custom Application Code -->
+    <script src="app.js"></script>
+</body>
+</html>
